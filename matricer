@@ -1,0 +1,190 @@
+'''a very basic module on operations on matrices.
+for a matrix to be compatible to all these functions, it should be in the form of:
+M=[
+    [a1,a2,a3,a4,.......], row 1
+    [b1,b2,b3,b4,.......], row 2
+    [c1,c2,c3,c4,.......], row 3
+    and so on
+]
+where M is the matrix (the texts row 1, row 2....are only for clarification, they are NOT included in the making of the matrix)'''
+def univassert(m):
+    '''checks for eligibility of a matrix for all functions'''
+    _assert4nill(m)
+    _assert4form(m)
+def assertion(m):
+    '''checks for eligibility of a matrix for functions specifically made for square matrices'''
+    univassert(m)
+    assert issquare(m), "given matrix is not a square matrix"
+def matrixMLT(a,b):
+    '''a function for multiplying two matrices of a(pxm) and b(mxq) order
+    returns product of a and b, that is axb (left to right)'''
+    univassert(a)
+    univassert(b)
+    ar,ac=len(a),len(a[0])
+    br,bc=len(b),len(b[0])
+    assert ac == br, f"matrix multiplication not possible between,\n {a}({ar}x{ac})\n and\n {b}({br}x{bc})"
+    return [[sum(a[r][i]*b[i][c] for i in range(ac)) for c in range(bc)] for r in range(ar)]
+def matrixMLTs(*Ms):
+    '''a function for multiplying two matrices of order a(pxm), b(mxq), c(qxs)....and so on
+    returns product of a,b,c.....and so on, that is axbxcx... (left to right only)'''
+    assert Ms != (), "no matricies to multiply"
+    m=Ms[0]
+    for i in range(1,len(Ms)):
+        m=matrixMLT(m,Ms[i])
+    return m
+def _structure(a,b,op):
+    '''a common structure between MSUM and MSUB function'''
+    univassert(a)
+    univassert(b)
+    ar,ac=len(a),len(a[0])
+    br,bc=len(b),len(b[0])
+    assert (ar==br) and (ac==bc), f"matrix operation ({op}) is not possible between,\n {a}({ar}x{ac})\n and\n {b}({br}x{bc})"
+    if op == "+":
+        return [[a[r][c] + b[r][c] for c in range(ac)] for r in range(ar)]
+    elif op == "-":
+        return [[a[r][c] - b[r][c] for c in range(ac)] for r in range(ar)]
+def _isnum(n):
+    return (isinstance(n,int) or isinstance(n,float)) and not isinstance(n,bool)
+def _assert4nill(m):
+    assert m != [], "matrix shall not be empty"
+def _assert4form(m):
+    assert isinstance(m,list), "matrix should only be made with lists"
+    nr,nc=len(m),len(m[0])
+    assert nr != 0 and nc != 0, "matrix was not found in the correct form"
+    for r in range(nr):
+        for c in range(nc):
+            assert m[r] != [], "row was found empty"
+            assert isinstance(m[r],list), "matrix was not found in correct form"
+            assert _isnum(m[r][c]), f"a non-numerical or non-real value was found in the matrix, that is, {m[r][c]}"
+            assert len(m[r]) == nc, "irregular number of column was found"
+def matrixSUM(a,b):
+    '''a function for adding two matrices a and b, both of same order
+    returns addition of a and b, that is a+b (left to right only)'''
+    return _structure(a,b,"+")
+def matrixSUB(a,b):
+    '''a function for subtracting two matrices a and b, both of same order
+    returns subtraction of a and b, that is a-b (left to right only)'''
+    return _structure(a,b,"-")
+def matrixSUMs(*Ms):
+    '''a function for adding matrices a,b,c,d......and so on, all of same order
+    returns addition of a,b,c,d.....and so on, that is a+b+c+d+..... (left to right only)'''
+    assert Ms != (), "no matricies to add"
+    m=Ms[0]
+    for n in range(1,len(Ms)):
+        m=matrixSUM(m,Ms[n])
+    return m
+def solver(Matrixdict,exp=""):
+    '''a function for solving expression involving only matrices
+    for eg: ABC+ABFH-AABC....., where A,B,C,F and H are compatible matrices
+    expression will be solved from left to right ONLY
+    Matrixdict should be {"A":<value of A>,"B":<value of B>,"C":.......}'''
+    b,d=exp,Matrixdict
+    b1=exp.replace("-","+").split("+")
+    d1={k:matrixMLTs(*[d[i] for i in k]) for k in b1}
+    val=d1[b1[0]]
+    for i in range(len(b1)-1):
+        b=b.removeprefix(b1[i])
+        val=_structure(val,d1[b1[i+1]],b[0])
+        b=b.removeprefix(b[0])
+    return val 
+def transpose(matrix):
+    '''transpose the matrix, that is, interchange rows and columns'''
+    univassert(matrix)
+    mr,mc=len(matrix),len(matrix[0])
+    return [[matrix[r][c] for r in range(mr)]for c in range(mc)]
+def multiply_with_constant(matrix,constant):
+    '''multiply each number in the matrix with the constant'''
+    univassert(matrix)
+    return [[matrix[r][c]*constant for c in range(len(matrix[0]))] for r in range(len(matrix))]
+def issquare(matrix):
+    univassert(matrix)
+    return len(matrix) == len(matrix[0])
+def issymmetric(matrix):
+    assertion(matrix)
+    return matrix == transpose(matrix)
+def isskew_symmetric(matrix):
+    assertion(matrix)
+    return matrix == multiply_with_constant(transpose(matrix),-1)
+def trace(matrix):
+    '''returns sum of diagonal elements'''
+    assertion(matrix)
+    return sum([matrix[n][n] for n in range(len(matrix))])
+def isidempotent(matrix):
+    assertion(matrix)
+    return matrix == RaisePower(matrix,2)
+def isinvolutary(matrix):
+    assertion(matrix)
+    return RaisePower(matrix,2) == GenScalarMatrix(len(matrix))
+def RaisePower(matrix,power):
+    '''used for multiplying matrix by itself multiple number of times'''
+    assertion(matrix)
+    assert power >= 0 and isinstance(power,int), "power should be a positive integer"
+    if power == 0:
+        return GenScalarMatrix(len(matrix))
+    return matrixMLTs(*[matrix]*power)
+def isperiodic(matrix,Checkupto=10):
+    assertion(matrix)
+    for i in range(2,Checkupto+1):
+        if matrix == RaisePower(matrix,i):
+            return True, i-1
+    else:
+        return False
+def isorthogonal(matrix):
+    assertion(matrix)
+    return matrixMLT(matrix,transpose(matrix)) == GenScalarMatrix(len(matrix))
+def isrow(matrix):
+    univassert(matrix)
+    for n in matrix[0]:
+        assert _isnum(n), "matrix may not be in form according to the module"
+    return len(matrix) == 1
+def iscolumn(matrix):
+    univassert(matrix)
+    for l in matrix:
+        assert isinstance(l,list) and len(l) ==1 and _isnum(l[0]), "matrix may not be in form according to the module"
+    return True
+def isnull(matrix):
+    univassert(matrix)
+    r,c=len(matrix),len(matrix[0])
+    for i in range(r):
+        for j in range(c):
+            if matrix[i][j] != 0:
+                return False
+    return True
+def issingleton(matrix):
+    univassert(matrix)
+    assert _isnum(matrix[0][0]), "singleton matrix should be in the form of [[n]], where n is any numeric value"
+    return len(matrix) == len(matrix[0]) == 1
+def ishorizontal(matrix):
+    univassert(matrix)
+    return len(matrix[0]) > len(matrix)
+def isvertical(matrix):
+    univassert(matrix)
+    return len(matrix[0]) < len(matrix)
+def isupper_triangular(matrix):
+    assertion(matrix)
+    nr = len(matrix)
+    for i in range(1,nr):
+        for j in range(i):
+            if matrix[i][j] != 0:
+                return False
+    return True
+def islower_triangular(matrix):
+    assertion(matrix)
+    nr,nc = len(matrix),len(matrix[0])
+    for i in range(nr):
+        for j in range(i+1,nc):
+            if matrix[i][j] != 0:
+                return False
+    return True
+def isdiagonal(matrix):
+    assertion(matrix)
+    return isupper_triangular(matrix) and islower_triangular(matrix)
+def isscalar(matrix):
+    assertion(matrix)
+    return matrix == GenScalarMatrix(len(matrix),matrix[0][0])
+def isidentity(matrix):
+    assertion(matrix)
+    return matrix == GenScalarMatrix(len(matrix))
+def GenScalarMatrix(order,scalar=1):
+    '''generates a scalar matrix, value of the scalar is 1 by default'''
+    return [[scalar if r==c else 0 for c in range(order)] for r in range(order)]
