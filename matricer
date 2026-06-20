@@ -49,6 +49,7 @@ def _assert4nill(m):
     assert m != [], "matrix shall not be empty"
 def _assert4form(m):
     assert isinstance(m,list), "matrix should only be made with lists"
+    assert isinstance(m[0],list), f"expected a list, got {type(m[0])}"
     nr,nc=len(m),len(m[0])
     assert nr != 0 and nc != 0, "matrix was not found in the correct form"
     for r in range(nr):
